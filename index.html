@@ -27,9 +27,9 @@
     --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
   }
   *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-tap-highlight-color:transparent}
-  .wrap{max-width:480px;margin:0 auto;min-height:100%;padding:0 16px;display:flex;flex-direction:column}
+  html{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-tap-highlight-color:transparent;min-height:100%;display:flex;flex-direction:column}
+  .wrap{max-width:480px;width:100%;margin:auto;padding:16px;display:flex;flex-direction:column}
   button{font-family:inherit;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
   .tnum{font-variant-numeric:tabular-nums}
 
@@ -140,6 +140,16 @@
   .sudpad button:active{background:var(--surface-2);transform:translateY(1px)}
   .sud-msg{text-align:center;font-weight:700;color:var(--good);min-height:22px;margin-top:8px;font-family:var(--mono)}
 
+  /* make 24 */
+  .p24cards{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:16px 0}
+  .p24card{width:72px;height:94px;border:1px solid var(--border);background:var(--surface);color:var(--ink);border-radius:14px;box-shadow:var(--shadow);font-family:var(--mono);font-weight:700;font-size:clamp(20px,6vw,28px);display:flex;align-items:center;justify-content:center;transition:transform .1s}
+  .p24card.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);transform:translateY(-3px)}
+  .p24ops{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .p24ops button{border:1px solid var(--border);background:var(--surface);color:var(--ink);font-family:var(--mono);font-weight:700;font-size:24px;padding:14px 0;border-radius:12px;box-shadow:var(--shadow)}
+  .p24ops button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .p24ctl{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+  .p24ctl .ghost{padding:12px 0}
+
   footer.site{padding-block:22px 28px;margin-top:10px;border-top:1px solid var(--border);text-align:center}
   footer.site .sig-line{font-size:14px;font-weight:600;color:var(--ink)}
   footer.site .sig-line a{color:var(--accent-text);text-decoration:none;font-weight:700}
@@ -161,6 +171,7 @@
       <button class="game" data-game="arith"><div class="g-ic">＋×</div><div><div class="g-name">Speed Arithmetic</div><div class="g-desc">Timed +−×÷ drills, your rules</div></div><div class="g-arrow">→</div></button>
       <button class="game" data-game="sudoku"><div class="g-ic">▦</div><div><div class="g-name">Sudoku</div><div class="g-desc">Classic 9×9 logic, 3 levels</div></div><div class="g-arrow">→</div></button>
       <button class="game" data-game="seq"><div class="g-ic">1·2</div><div><div class="g-name">Number Sequences</div><div class="g-desc">Spot the pattern, find the next</div></div><div class="g-arrow">→</div></button>
+      <button class="game" data-game="p24"><div class="g-ic">24</div><div><div class="g-name">Make 24</div><div class="g-desc">Hit 24 with + − × ÷</div></div><div class="g-arrow">→</div></button>
     </div>
     <footer class="site">
       <div class="sig-line">Wednesday Wang<span class="dot">·</span><a href="https://www.linkedin.com/in/wednesdayw" target="_blank" rel="noopener">LinkedIn ↗</a></div>
@@ -279,6 +290,22 @@
     <button class="ghost" id="sud-new" style="margin-top:12px">New puzzle</button>
   </section>
 
+  <!-- ========== MAKE 24 ========== -->
+  <section id="screen-p24" hidden>
+    <div class="topbar"><button class="back" id="p24-back" aria-label="Back">←</button><h1>Make 24</h1><div class="spacer"></div><div class="mini" id="p24-timer">0:00</div></div>
+    <p class="hint" style="padding:4px 2px 2px">Combine all four numbers with + − × ÷ to reach <b>24</b>. Tap a number, an operator, then another number.</p>
+    <div class="p24cards" id="p24-cards"></div>
+    <div class="p24ops" id="p24-ops">
+      <button data-op="+">+</button><button data-op="−">−</button><button data-op="×">×</button><button data-op="÷">÷</button>
+    </div>
+    <div class="sud-msg" id="p24-msg"></div>
+    <div class="p24ctl">
+      <button class="ghost" id="p24-undo">Undo</button>
+      <button class="ghost" id="p24-sol">Solution</button>
+      <button class="ghost" id="p24-new">New</button>
+    </div>
+  </section>
+
   <!-- ========== SEQUENCES: start ========== -->
   <section id="screen-seqstart" hidden>
     <div class="topbar"><button class="back" id="seqstart-back" aria-label="Back">←</button><h1>Number Sequences</h1></div>
@@ -327,7 +354,7 @@
 <script>
 "use strict";
 const $=s=>document.querySelector(s);
-const screens={hub:$("#screen-hub"),modes:$("#screen-modes"),config:$("#screen-config"),play:$("#screen-play"),result:$("#screen-result"),sudoku:$("#screen-sudoku"),seqstart:$("#screen-seqstart"),seq:$("#screen-seq"),seqresult:$("#screen-seqresult")};
+const screens={hub:$("#screen-hub"),modes:$("#screen-modes"),config:$("#screen-config"),play:$("#screen-play"),result:$("#screen-result"),sudoku:$("#screen-sudoku"),p24:$("#screen-p24"),seqstart:$("#screen-seqstart"),seq:$("#screen-seq"),seqresult:$("#screen-seqresult")};
 function show(n){ for(const k in screens) screens[k].hidden=(k!==n); window.scrollTo(0,0); }
 function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 function fmt(sec){ const m=Math.floor(sec/60), s=sec%60; return m+":"+String(s).padStart(2,"0"); }
@@ -338,6 +365,7 @@ $("#games").addEventListener("click",e=>{
   if(g.dataset.game==="arith") show("modes");
   else if(g.dataset.game==="sudoku"){ show("sudoku"); if(!sud.started) newSudoku("easy"); }
   else if(g.dataset.game==="seq") show("seqstart");
+  else if(g.dataset.game==="p24"){ show("p24"); newP24(); }
 });
 $("#modes-back").addEventListener("click",()=>show("hub"));
 
@@ -488,6 +516,79 @@ function seqEnd(){ if(!SQ||SQ.ended) return; SQ.ended=true; clearInterval(SQ.tic
 $("#seq-quit").addEventListener("click",()=>{ if(SQ) seqEnd(); });
 $("#seq-again").addEventListener("click", startSeq);
 $("#seq-home").addEventListener("click", ()=>show("hub"));
+
+/* ===================== MAKE 24 ===================== */
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ const t=a%b; a=b; b=t; } return a||1; }
+function fr(n,d){ if(d<0){ n=-n; d=-d; } const g=gcd(n,d); return {n:n/g, d:d/g}; }
+function comb(x,y,op){
+  if(op==='+') return fr(x.n*y.d+y.n*x.d, x.d*y.d);
+  if(op==='−') return fr(x.n*y.d-y.n*x.d, x.d*y.d);
+  if(op==='×') return fr(x.n*y.n, x.d*y.d);
+  if(y.n===0) return null; return fr(x.n*y.d, x.d*y.n);  // ÷
+}
+function is24(f){ return f.d!==0 && f.n===24*f.d; }
+function flabel(f){ return f.d===1?(''+f.n):(f.n+'/'+f.d); }
+function solve24(cards){
+  if(cards.length===1) return is24(cards[0].f)?cards[0].e:null;
+  for(let i=0;i<cards.length;i++) for(let j=0;j<cards.length;j++){ if(i===j) continue;
+    const rest=cards.filter((_,k)=>k!==i&&k!==j), a=cards[i], b=cards[j];
+    for(const op of ['+','×','−','÷']){
+      if((op==='+'||op==='×') && i>j) continue;   // commutative: avoid duplicates
+      const f=comb(a.f,b.f,op); if(!f) continue;
+      const r=solve24(rest.concat([{f,e:'('+a.e+op+b.e+')'}]));
+      if(r) return r;
+    }
+  }
+  return null;
+}
+function stripParen(s){ return (s.charAt(0)==='('&&s.charAt(s.length-1)===')')? s.slice(1,-1): s; }
+let G24=null;
+function newP24(){
+  let nums, sol=null, guard=0;
+  do{ nums=[0,0,0,0].map(()=>randInt(1,9));
+      sol=solve24(nums.map(n=>({f:{n,d:1}, e:''+n}))); guard++;
+  }while(!sol && guard<500);
+  let id=0;
+  if(G24) clearInterval(G24.tick);
+  G24={ cards:nums.map(n=>({id:id++, f:{n,d:1}})), sel:null, op:null, hist:[], sol, startTs:Date.now(), tick:null, done:false };
+  const r=()=>{ if(!G24.done) $("#p24-timer").textContent=fmt(Math.floor((Date.now()-G24.startTs)/1000)); };
+  r(); G24.tick=setInterval(r,500);
+  const m=$("#p24-msg"); m.textContent=""; m.style.color="";
+  renderP24();
+}
+function renderP24(){
+  const wrap=$("#p24-cards"); wrap.innerHTML="";
+  G24.cards.forEach((c,idx)=>{
+    const b=document.createElement("button"); b.className="p24card"+(G24.sel===idx?" sel":"");
+    b.textContent=flabel(c.f); b.dataset.idx=idx; wrap.appendChild(b);
+  });
+  $("#p24-ops").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x.dataset.op===G24.op?"true":"false"));
+}
+function p24msg(text,color){ const m=$("#p24-msg"); m.style.color=color||""; m.textContent=text; }
+function flash24(text){ p24msg(text,"var(--bad)"); setTimeout(()=>{ if($("#p24-msg").textContent===text) p24msg(""); },1200); }
+function tapCard(idx){
+  if(G24.sel===null){ G24.sel=idx; renderP24(); return; }
+  if(G24.sel===idx){ G24.sel=null; G24.op=null; renderP24(); return; }   // deselect
+  if(G24.op===null){ G24.sel=idx; renderP24(); return; }                 // change first pick
+  const a=G24.cards[G24.sel], b=G24.cards[idx], f=comb(a.f,b.f,G24.op);
+  if(!f){ flash24("Can't divide by zero"); return; }
+  G24.hist.push(G24.cards.map(c=>({id:c.id, f:{n:c.f.n,d:c.f.d}})));
+  const keep=G24.cards.filter((_,k)=>k!==G24.sel && k!==idx);
+  keep.push({id:a.id, f});
+  G24.cards=keep; G24.sel=null; G24.op=null; renderP24(); checkP24();
+}
+function tapOp(op){ if(G24.sel===null){ flash24("Pick a number first"); return; } G24.op=(G24.op===op?null:op); renderP24(); }
+function checkP24(){
+  if(G24.cards.length!==1) return;
+  if(is24(G24.cards[0].f)){ G24.done=true; clearInterval(G24.tick); p24msg("24! Solved in "+$("#p24-timer").textContent+" ✓","var(--good)"); }
+  else p24msg("That's "+flabel(G24.cards[0].f)+", not 24 — undo and retry.","var(--bad)");
+}
+$("#p24-cards").addEventListener("pointerdown",e=>{ const b=e.target.closest(".p24card"); if(!b||!G24||G24.done) return; e.preventDefault(); tapCard(+b.dataset.idx); });
+$("#p24-ops").addEventListener("pointerdown",e=>{ const b=e.target.closest("button"); if(!b||!G24||G24.done) return; e.preventDefault(); tapOp(b.dataset.op); });
+$("#p24-undo").addEventListener("click",()=>{ if(!G24||G24.done||!G24.hist.length) return; G24.cards=G24.hist.pop(); G24.sel=null; G24.op=null; p24msg(""); renderP24(); });
+$("#p24-new").addEventListener("click", newP24);
+$("#p24-sol").addEventListener("click",()=>{ if(G24) p24msg("One way: "+(G24.sol?stripParen(G24.sol)+" = 24":"—"),"var(--muted)"); });
+$("#p24-back").addEventListener("click",()=>{ if(G24) clearInterval(G24.tick); show("hub"); });
 
 show("hub");
 </script>
